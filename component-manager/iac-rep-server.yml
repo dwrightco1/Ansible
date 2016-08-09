@@ -1,6 +1,0 @@
----
-- hosts: cm
-  sudo: yes
-  roles:
-
-  tasks:

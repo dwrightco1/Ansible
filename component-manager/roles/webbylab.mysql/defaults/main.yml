@@ -1,2 +1,0 @@
----
-mysql_users: [{name: 'user', password: 'password', db: 'mydb', host: 'localhost'}]
