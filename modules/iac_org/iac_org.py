@@ -44,7 +44,7 @@ def iac_org_present(data):
     meta = { "msg": "HTTP 500: internal server error", "result": result.status_code}
     return False, False, meta
 
-  # handle unknown HTTP status code2
+  # handle unknown HTTP status code
   meta = {
     "msg": "unknown return code from api call",
     "result": result.status_code,
