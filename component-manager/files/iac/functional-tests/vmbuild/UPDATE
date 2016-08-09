@@ -1,0 +1,36 @@
+#!/bin/bash
+
+httpMethod="POST"
+contentType="application/json"
+apiMethod="vmbuild"
+tmpFile=${apiMethod}.tmp
+jsonFile=${apiMethod}.json
+jsonTpl=${apiMethod}.json.tpl
+
+usage() {
+	echo "usage: $0 <id>"
+	exit 1
+}
+
+if [ $# -ne 1 ]; then
+	usage
+fi
+
+# Read IAC Configuration (iac.conf)
+configFile=/opt/webmodules/iac/conf/iac.conf
+source readConfig.sh
+uri=${platformBase}${apiBase}/${apiMethod}
+
+echo "curl -i -X ${httpMethod} \\"
+echo "     -H \"Content-Type: ${contentType}\" \\"
+echo "     -H \"Accept: ${contentType}\" \\"
+echo "     -d \"@${apiMethod}-UPDATE.json\" \\"
+echo "     \"${uri}\" \\"
+
+cat ${apiMethod}-UPDATE.json.tpl | sed -e "s/<id>/${1}/g" > ${apiMethod}-UPDATE.json
+curl -i -H "Content-Type: ${contentType}" -H "Accept: ${contentType}" -X ${httpMethod} -d "@${apiMethod}-UPDATE.json" "${uri}"; echo
+
+# cleanup
+rm -f ${jsonFile}
+
+exit 0

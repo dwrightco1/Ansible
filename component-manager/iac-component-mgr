@@ -1,0 +1,238 @@
+#!/bin/bash
+
+# initialize variables
+flag_start=0
+flag_stop=0
+flag_destroy=0
+flag_status=0
+flag_all=0
+flag_bootOnly=0
+group=""
+host=""
+targets=""
+
+# initialize group-playbook maps
+dbservers_runlist="iac-db-server.yml"
+appservers_runlist="iac-platform-server.yml"
+cmservers_runlist="iac-cm-server.yml"
+intservers_runlist="iac-platform-server.yml"
+repservers_runlist="iac-rep-server.yml"
+
+
+# initialize group maps
+dbservers_group="db01"
+appservers_group="app01"
+cmservers_group="cm01"
+intservers_group="int01"
+repservers_group="rep01"
+
+# define functions
+usage() {
+	echo "IAC Cluster Component Manager"
+	echo
+	echo "usage: $0 <start [bootOnly]|stop|destroy|status> -g <all>|<group [group ...]>"
+	echo
+	echo "  - <start>    : start IAC cluster component VMs (build VMs if needed)"
+	echo "  - <stop>     : suspend one or more components in an IAC cluster"
+	echo "  - <destroy>  : stop IAC cluster and destroy component VMs"
+	echo "  - <status>   : show status of component VMs"
+	echo
+	exit 1
+}
+
+assert() {
+	echo "${*}"
+	exit 1
+}
+
+start() {
+	# startup virtualization environment
+	echo "[STARTING VIRTUALIZATION ENVIRONMENT]"
+	echo "==> operating on: ${targets}"
+	for target in ${targets}; do
+		vagrant up ${target}
+		if [ $? -ne 0 ]; then exit 1; fi
+	done
+
+	# execute runlist on dbservers
+	if [ ${flag_bootOnly} -eq 0 ]; then
+		if [[ ${group} =~ .*db.* ]]; then
+			echo; echo "[CONFIGURE DATABASE SERVERS]"
+			if [ ! -z "${dbservers_runlist}" ]; then
+				for playbook in ${dbservers_runlist}; do
+					ansible-playbook ${playbook}
+					if [ $? -ne 0 ]; then exit 1; fi
+				done
+			else
+				echo "==> info: runlist empty"
+			fi
+		fi
+
+		# execute runlist on appservers
+		if [[ ${group} =~ .*app.* ]]; then
+			echo; echo "[CONFIGURE PLATFORM SERVERS]"
+			if [ ! -z "${appservers_runlist}" ]; then
+				for playbook in ${appservers_runlist}; do
+					ansible-playbook ${playbook}
+					if [ $? -ne 0 ]; then exit 1; fi
+				done
+			else
+				echo "==> info: runlist empty"
+			fi
+		fi
+
+		# execute runlist on cmservers
+		if [[ ${group} =~ .*cm.* ]]; then
+			echo; echo "[CONFIGURE CONFIGURATIon MGT SERVERS]"
+			if [ ! -z "${cmservers_runlist}" ]; then
+				for playbook in ${cmservers_runlist}; do
+					ansible-playbook ${playbook}
+					if [ $? -ne 0 ]; then exit 1; fi
+				done
+			else
+				echo "==> info: runlist empty"
+			fi
+		fi
+
+		# execute runlist on intservers
+		if [[ ${group} =~ .*int.* ]]; then
+			echo; echo "[CONFIGURE INTEGRATION SERVERS]"
+			if [ ! -z "${intservers_runlist}" ]; then
+				for playbook in ${intservers_runlist}; do
+					ansible-playbook ${playbook}
+					if [ $? -ne 0 ]; then exit 1; fi
+				done
+			else
+				echo "==> info: runlist empty"
+			fi
+		fi
+
+		# execute runlist on repservers
+		if [[ ${group} =~ .*rep.* ]]; then
+			echo; echo "[CONFIGURE REPORTING SERVERS]"
+			if [ ! -z "${repservers_runlist}" ]; then
+				for playbook in ${repservers_runlist}; do
+					ansible-playbook ${playbook}
+					if [ $? -ne 0 ]; then exit 1; fi
+				done
+			else
+				echo "==> info: runlist empty"
+			fi
+		fi
+	fi
+}
+
+stop() {
+	echo "[SHUTTING DOWN VIRTUALIZATION ENVIRONMENT]"
+	for target in ${targets}; do
+		vagrant suspend ${target}
+	done
+}
+
+destroy() {
+	echo "[DESTROYING VIRTUALIZATION ENVIRONMENT]"
+}
+
+stop() {
+	echo "[SHUTTING DOWN VIRTUALIZATION ENVIRONMENT]"
+	for target in ${targets}; do
+		vagrant suspend ${target}
+	done
+}
+
+destroy() {
+	echo "[DESTROYING VIRTUALIZATION ENVIRONMENT]"
+	for target in ${targets}; do
+		vagrant destroy -f ${target}
+	done
+}
+
+status() {
+	vagrant status
+}
+
+# process cmmandline arguments
+while [ $# -gt 0 ]; do
+	case ${1} in
+	'start')
+		flag_start=1
+		;;
+	'stop')
+		flag_stop=1
+		;;
+	'destroy')
+		flag_destroy=1
+		;;
+	'status')
+		flag_status=1
+		;;
+	'bootOnly'|'-b')
+		if [ ${flag_start} -ne 1 ]; then
+			usage
+		fi
+		flag_bootOnly=1
+		;;
+	'-group'|'-g')
+		if [ $# -lt 2 ]; then 
+			usage
+		fi
+
+		if [ "${2}" == "all" ]; then
+			group="db app cm int rep"
+			flag_all=1
+			shift 1
+		else
+			while [ $# -gt 0 ]; do
+				group=`echo ${group} ${2}`
+				shift 1
+			done
+		fi
+		;;
+	*)
+		usage
+		;;
+	esac
+	shift
+done
+
+# populate target list for server groups
+if [[ "${group}" =~ .*db.* ]]; then
+	for host in ${dbservers_group}; do
+		targets=`echo ${targets} ${host}`
+	done
+fi
+if [[ "${group}" =~ .*app.* ]]; then
+	for host in ${appservers_group}; do
+		targets=`echo ${targets} ${host}`
+	done
+fi
+if [[ $group =~ .*cm.* ]]; then
+	for host in ${cmservers_group}; do
+		targets=`echo ${targets} ${host}`
+	done
+fi
+if [[ $group =~ .*int.* ]]; then
+	for host in ${intservers_group}; do
+		targets=`echo ${targets} ${host}`
+	done
+fi
+if [[ $group =~ .*rep.* ]]; then
+	for host in ${repservers_group}; do
+		targets=`echo ${targets} ${host}`
+	done
+fi
+
+if [ ${flag_start} -eq 1 ]; then
+	start
+elif [ ${flag_stop} -eq 1 ]; then
+	stop
+elif [ ${flag_destroy} -eq 1 ]; then
+	destroy
+elif [ ${flag_status} -eq 1 ]; then
+	status
+else
+	usage
+fi
+
+echo "[COMPLETE]"
+exit 0

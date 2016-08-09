@@ -1,0 +1,36 @@
+$ ansible-playbook -i inventory/hosts iac_org.yml
+
+PLAY [localhost] ***************************************************************
+
+TASK [setup] *******************************************************************
+ok: [localhost]
+
+TASK [create IAC organization] *************************************************
+changed: [localhost]
+
+TASK [debug] *******************************************************************
+ok: [localhost] => {
+    "create_result": {
+        "changed": true,
+        "meta": {
+            "msg": "job submitted (asynchronous method)",
+            "result": 201
+        }
+    }
+}
+
+TASK [delete IAC organization] *************************************************
+changed: [localhost]
+
+TASK [debug] *******************************************************************
+ok: [localhost] => {
+    "delete_result": {
+        "changed": true,
+        "meta": {
+            "msg": "organization deleted successfully"
+        }
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=2    unreachable=0    failed=0

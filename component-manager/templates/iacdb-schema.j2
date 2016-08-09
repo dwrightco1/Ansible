@@ -1,0 +1,9 @@
+use {{ mysql_iac_dbname }};
+
+create table if not exists system (
+	id int not null auto_increment,
+	schemaVersion varchar(32),
+	primary key (id)
+);
+
+insert into system (schemaVersion) values ('0.1.0');

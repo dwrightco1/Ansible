@@ -1,0 +1,23 @@
+#!/bin/bash
+
+httpMethod="POST"
+contentType="application/json"
+apiMethod="vmbuild"
+tmpFile=${apiMethod}.tmp
+jsonFile=${apiMethod}.json
+jsonTpl=${apiMethod}.json.tpl
+
+# Read IAC Configuration (iac.conf)
+configFile=/opt/webmodules/iac/conf/iac.conf
+source readConfig.sh
+uri=${platformBase}${apiBase}/${apiMethod}
+
+echo "curl -i -X ${httpMethod} \\"
+echo "     -H \"Content-Type: ${contentType}\" \\"
+echo "     -H \"Accept: ${contentType}\" \\"
+echo "     -d \"@${apiMethod}-CREATE.json\" \\"
+echo "     \"${uri}\""
+
+# execute curl
+curl -i -H "Content-Type: ${contentType}" -H "Accept: ${contentType}" -X ${httpMethod} -d "@${apiMethod}-CREATE.json" "${uri}"
+

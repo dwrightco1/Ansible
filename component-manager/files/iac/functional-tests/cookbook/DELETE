@@ -1,0 +1,26 @@
+#!/bin/bash
+
+httpMethod="DELETE"
+contentType="application/xml"
+apiMethod="cookbook"
+
+usage() {
+	echo "usage: $0 <id>"
+	exit 1
+}
+
+if [ $# -ne 1 ]; then
+	usage
+fi
+
+# Read IAC Configuration (iac.conf)
+configFile=/opt/webmodules/iac/conf/iac.conf
+source readConfig.sh
+uri=${platformBase}${apiBase}/${apiMethod}/${1}
+
+echo "curl -i -X ${httpMethod} \\"
+echo "     -H \"Content-Type: ${contentType}\" \\"
+echo "     -H \"Accept: ${contentType}\" \\"
+echo "     \"${uri}\" \\"
+
+curl -i -H "Content-Type: ${contentType}" -H "Accept: ${contentType}" -X ${httpMethod} "${uri}"
