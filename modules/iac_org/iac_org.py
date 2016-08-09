@@ -113,8 +113,8 @@ def main():
   fields = {
     "name": {"required": True, "type": "str" },
     "cm_api": {"required": True, "type": "str" },
-    "fullName": {"required": True, "type": "str" },
-    "vSpheres": { "required": True, "type": "dict" },
+    "fullName": {"required": False, "type": "str" },
+    "vSpheres": { "required": False, "type": "dict" },
     "state": {
       "default": "present",
       "choices": ['present', 'absent'],  
